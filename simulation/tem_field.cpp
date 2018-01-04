@@ -3,7 +3,7 @@
 #include<iostream>
 
 namespace simulation {
-TemField::TemField(const SgnFileReader& reader) {
+TemField::TemField() {
   nx = reader.GetNx();
   ny = reader.GetNy();
   nz = reader.GetNz();
@@ -12,10 +12,8 @@ TemField::TemField(const SgnFileReader& reader) {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
         uint32_t index = k + nz*j + ny*nz*i;
-        if (reader.grid_[index] == 0)
-          tem_field_[index] = 1000.0;
-        else if (reader.grid_[index] == 1)
-          tem_field_[index] = 20.0;
+        if (reader.grid_[index] == 0 || reader.grid_[index] == 121)
+          tem_field_[index] = 600.0;
         else
           tem_field_[index] = 20.0;
       }
@@ -145,29 +143,21 @@ double TemField::GetNextTem(short i, short j, short k) const {
     yz2[x] = yinzi2;
   }
   double T_next = T_i + yinzi1 * yinzi2;
-  if (T_next > 1200) {
-      std::cerr << "error!\n" << i << " " << j << " " << k << " ";
-      std::cerr << yinzi1 << " " << yinzi2 << " " << yinzi1*yinzi2 << "\n";
-      std::cerr << "birerongi: " << tmpi << " birerongj: \n";
-      for (int x = 0; x < 6; ++x) {
-          std::cerr << "x : " << tmpj[x] << "\n";
-      }
-      std::cerr << "yz2 : ";
-      for (int x = 0; x < 6; ++x) {
-          std::cerr << "x : " << yz2[x] << "\n";
-      }
-      std::cerr << "Ti: " << T_i << " " << "t_next: " << T_next << std::endl;
-  }
+
+
   //  发热材料发热
-  //	if (reader.sgn[CurrentNodeOffset] == 5 && k >= 15)
-  //	{
-  //	    std::cout << "before : " << T_next << std::endl;
-  //		T_next += yinzi1 * size * 10000000.0;
-  //		std::cout << "after : " << T_next << std::endl;
-  //	}
+  if (reader.grid_[current_node_index] == 121) {
+		T_next += GetFeverTem();
+	}
   return T_next;
 }
 
+double TemField::GetFeverTem() const {
+	if (header.Time >= fever_struct.fever_start_time && header.Time <= fever_struct.fever_end_time) {
+		return fever_struct.T_i_fever;
+	}
+	return 0.0;
+}
 void TemField::SetHeader(const TemField& last,double time_step) {
   header.SN = last.header.SN;
   header.Time += time_step;
@@ -177,7 +167,7 @@ void TemField::SetHeader(const TemField& last,double time_step) {
   header.Tmin = 0.0;
 }
 
-void TemField::OutToTecplot(std::ofstream& out, const SgnFileReader& reader) const {
+void TemField::OutToTecplot(std::ofstream& out) const {
   out << "TITLE = \"TEST\"\n";
   out << "VARIABLES = \"X\",\"Y\",\"Z\",\"T\",\"D\"\n";
   out << "ZONE I=" << nx << ",J=" << ny << ",K=" << nz << ",F=POINT\n";
@@ -191,7 +181,7 @@ void TemField::OutToTecplot(std::ofstream& out, const SgnFileReader& reader) con
   }
 }
 
-void TemField::OutToTecplotZoo(std::ofstream& out, const SgnFileReader& reader) const {
+void TemField::OutToTecplotZoo(std::ofstream& out) const {
   out << "ZONE I=" << nx << ",J=" << ny << ",K=" << nz << ",F=POINT\n";
   for (int k = 0; k < nz; ++k) {
     for (int j = 0; j < ny; ++j) {
@@ -202,4 +192,6 @@ void TemField::OutToTecplotZoo(std::ofstream& out, const SgnFileReader& reader) 
     }
   }
 }
+
+SgnFileReader TemField::reader(std::ifstream("huazhu\\mysgn.sgn", std::ios::in | std::ios::binary));
 }//namespace simulation

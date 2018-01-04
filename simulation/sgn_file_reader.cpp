@@ -13,6 +13,17 @@ SgnFileReader::SgnFileReader(std::ifstream&& in) :in_(std::move(in)), grid_(null
   in_.read(reinterpret_cast<char*>(dz_), sizeof(float)*filehead_.nz);
 }
 
+SgnFileReader::SgnFileReader(SgnFileReader&& rsgn) {
+	in_ = std::move(rsgn.in_);
+	filehead_ = rsgn.filehead_;
+	dx_ = rsgn.dx_;
+	dy_ = rsgn.dy_;
+	dz_ = rsgn.dz_;
+	rsgn.dx_ = nullptr;
+	rsgn.dy_ = nullptr;
+	rsgn.dz_ = nullptr;
+}
+
 SgnFileReader::~SgnFileReader() {
   in_.close();
   delete grid_;

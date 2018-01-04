@@ -4,10 +4,12 @@
 #include<map>
 #include<vector>
 #include<future>
+#include<cstdio>
 #include"tem_field.h"
 #include"sgn_file_reader.h"
 #include"stdafx.h"
 #include"threadpool.h"
+
 
 void Init()
 {
@@ -15,11 +17,13 @@ void Init()
   data.insert(std::pair<int, database>(0, zhutie));
   data.insert(std::pair<int, database>(2, shazi));
   data.insert(std::pair<int, database>(1, kongqi));
+  data.insert(std::pair<int, database>(5, fare));
 
   //设置网格大小与空气温度
-  size = 0.006;
+  size = 0.004;
   airtem = 20;
   tem_step = 10;
+
   //设置时间步长
   std::map<int, database>::iterator it = data.begin();
   double tmp = (*it).second.midu*(*it).second.birerong;
@@ -36,18 +40,36 @@ void Init()
   tem_step = tmp * size * size / (6 * 37.2);
   std::cout << "time step : ";
   std::cout << tem_step << std::endl;
+
+	double grid_v = size * size * size;
+	//设置发热参数
+	fever_struct.fever_start_time = 18; //s
+	fever_struct.fever_end_time = 38; //s
+	fever_struct.perm_Al = 0.17;
+	fever_struct.perm_Si = 0.l;
+	fever_struct.v_Al = 6.8;
+	fever_struct.v_Si = 4;
+	fever_struct.H_Al = 838000;
+	fever_struct.H_Si = 1378510;
+	fever_struct.m_Al = data[5].midu * size * size * size * fever_struct.perm_Al;
+	fever_struct.m_Si = data[5].midu * size * size * size * fever_struct.perm_Si;
+	fever_struct.d_mAl = fever_struct.v_Al * tem_step * grid_v;
+	fever_struct.d_mSi = fever_struct.v_Si * tem_step * grid_v;
+	fever_struct.d_q = fever_struct.d_mAl / (27 * 2) * fever_struct.H_Al \
+									 + fever_struct.d_mSi / (28 * 3) * fever_struct.H_Si;
+	fever_struct.T_i_fever = fever_struct.d_q / (data[5].midu * data[5].birerong * grid_v);
 }
 
 int main() {
   ThreadPool pool(4);
   std::vector<std::future<void>> results;
-  std::ofstream out("D:\\result.txt", std::ios::out | std::ios::app);
+  //std::ofstream out("result.txt", std::ios::out | std::ios::app);
   Init();
-  simulation::TemField tem_last(reader);
-  tem_last.OutToTecplot(out,reader);
-  out.close();
-  simulation::TemField tem_next(reader.GetNx(), reader.GetNy(), reader.GetNz());
-  for (int i = 1; i < 100; ++i) {
+  simulation::TemField tem_last;
+  //tem_last.OutToTecplot(out);
+  //out.close();
+  simulation::TemField tem_next;
+  for (int i = 1; i < 2500; ++i) {
     auto partone = std::bind(&simulation::TemField::CalculatePartOne, std::ref(tem_next), std::ref(tem_last));
     auto parttwo = std::bind(&simulation::TemField::CalculatePartTwo, std::ref(tem_next), std::ref(tem_last));
     auto partthree = std::bind(&simulation::TemField::CalculatePartThree, std::ref(tem_next), std::ref(tem_last));
@@ -66,11 +88,11 @@ int main() {
     //准备新文件
     char buf[10];
     sprintf_s(buf, "%d", i);
-    std::string name = std::string("D:/t") + std::string(buf) + std::string(".lay");
+    std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
     std::ofstream eachfile(name.c_str(), std::ios::out);
 
     tem_next.Calculate(tem_last);
-    tem_next.OutToTecplot(eachfile,reader);
+    tem_next.OutToTecplot(eachfile);
     tem_last.SwapTemField(tem_next);
     results.clear();
     eachfile.close();

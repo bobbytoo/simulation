@@ -5,8 +5,7 @@
 
 namespace simulation {
 inline
-bool equal(double a, double b)
-{
+bool equal(double a, double b) {
   return (a - b > -0.0001 && a - b < 0.0001);
 }
 
@@ -24,7 +23,7 @@ class TemField {
     char ss[230];
   };
   #pragma pack()
-  explicit TemField(const SgnFileReader& reader);
+  explicit TemField();
   TemField(short i, short j, short k);
   virtual ~TemField();
   uint32_t GetNodeIndex(short i, short j, short k) const;
@@ -32,8 +31,8 @@ class TemField {
   void Calculate(const TemField& last);
   double GetNextTem(short i, short j, short k) const;
   void SetHeader(const TemField& last,double time_step);
-  void OutToTecplot(std::ofstream& out,const SgnFileReader& reader) const;
-  void OutToTecplotZoo(std::ofstream& out, const SgnFileReader& reader) const;
+  void OutToTecplot(std::ofstream& out) const;
+  void OutToTecplotZoo(std::ofstream& out) const;
   inline
   database GetNodeData(const SgnFileReader& reader,uint32_t index) const {
     if (index == -1)
@@ -47,8 +46,10 @@ class TemField {
   void CalculatePartTwo(const TemField& last);
   void CalculatePartThree(const TemField& last);
   void CalculatePartFour(const TemField& last);
+	double GetFeverTem() const;
 
  private:
+  static SgnFileReader reader;
   HeadTem header;
   double *tem_field_;
   short nx;

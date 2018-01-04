@@ -17,6 +17,7 @@ class SgnFileReader {
   };
   #pragma pack()
   explicit SgnFileReader(std::ifstream&& in);
+  SgnFileReader(SgnFileReader&& rsgn);
   virtual ~SgnFileReader();
   void OutToTecplot(std::ofstream& out) const;
   inline
