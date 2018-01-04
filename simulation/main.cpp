@@ -51,8 +51,8 @@ void Init()
 	fever_struct.v_Si = 4;
 	fever_struct.H_Al = 838000;
 	fever_struct.H_Si = 1378510;
-	fever_struct.m_Al = data[5].midu * size * size * size * fever_struct.perm_Al;
-	fever_struct.m_Si = data[5].midu * size * size * size * fever_struct.perm_Si;
+	fever_struct.m_Al = data[5].midu * grid_v * fever_struct.perm_Al;
+	fever_struct.m_Si = data[5].midu * grid_v * fever_struct.perm_Si;
 	fever_struct.d_mAl = fever_struct.v_Al * tem_step * grid_v;
 	fever_struct.d_mSi = fever_struct.v_Si * tem_step * grid_v;
 	fever_struct.d_q = fever_struct.d_mAl / (27 * 2) * fever_struct.H_Al \
