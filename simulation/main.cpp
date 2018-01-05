@@ -58,18 +58,17 @@ void Init()
 	fever_struct.d_q = fever_struct.d_mAl / (27 * 2) * fever_struct.H_Al \
 									 + fever_struct.d_mSi / (28 * 3) * fever_struct.H_Si;
 	fever_struct.T_i_fever = fever_struct.d_q / (data[5].midu * data[5].birerong * grid_v);
+	
 }
 
 int main() {
   ThreadPool pool(4);
   std::vector<std::future<void>> results;
-  //std::ofstream out("result.txt", std::ios::out | std::ios::app);
   Init();
   simulation::TemField tem_last;
-  //tem_last.OutToTecplot(out);
-  //out.close();
+  double total_time = 0;
   simulation::TemField tem_next;
-  for (int i = 1; i < 2500; ++i) {
+  for (int i = 1; i < 25; ++i) {
     auto partone = std::bind(&simulation::TemField::CalculatePartOne, std::ref(tem_next), std::ref(tem_last));
     auto parttwo = std::bind(&simulation::TemField::CalculatePartTwo, std::ref(tem_next), std::ref(tem_last));
     auto partthree = std::bind(&simulation::TemField::CalculatePartThree, std::ref(tem_next), std::ref(tem_last));
@@ -83,19 +82,19 @@ int main() {
       it.get();
     }
     std::cout << "第" << i << "次完成！\n";
-    tem_next.SetHeader(tem_last, tem_step);
-    //tem_next.OutToTecplotZoo(out, reader);
+	tem_next.SetHeader(tem_last, tem_step);
     //准备新文件
-    char buf[10];
-    sprintf_s(buf, "%d", i);
-    std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
-    std::ofstream eachfile(name.c_str(), std::ios::out);
-
-    tem_next.Calculate(tem_last);
-    tem_next.OutToTecplot(eachfile);
-    tem_last.SwapTemField(tem_next);
-    results.clear();
-    eachfile.close();
+	if (i % 100 == 0) {
+		char buf[10];
+		sprintf_s(buf, "%d", i);
+		std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
+		std::ofstream eachfile(name.c_str(), std::ios::out);
+		tem_next.OutToTecplot(eachfile);
+		eachfile.close();
+	}
+		tem_last.SwapTemField(tem_next);
+		results.clear();
+		total_time += tem_step;
   }
 	system("pause");
 	return 0;

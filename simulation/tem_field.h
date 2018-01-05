@@ -23,7 +23,7 @@ class TemField {
     char ss[230];
   };
   #pragma pack()
-  explicit TemField();
+  TemField();
   TemField(short i, short j, short k);
   virtual ~TemField();
   uint32_t GetNodeIndex(short i, short j, short k) const;
@@ -46,9 +46,9 @@ class TemField {
   void CalculatePartTwo(const TemField& last);
   void CalculatePartThree(const TemField& last);
   void CalculatePartFour(const TemField& last);
-	double GetFeverTem() const;
+  double GetFeverTem() const;
 
- private:
+public:
   static SgnFileReader reader;
   HeadTem header;
   double *tem_field_;

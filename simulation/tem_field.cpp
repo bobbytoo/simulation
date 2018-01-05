@@ -12,8 +12,8 @@ TemField::TemField() {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
         uint32_t index = k + nz*j + ny*nz*i;
-        if (reader.grid_[index] == 0 || reader.grid_[index] == 121)
-          tem_field_[index] = 600.0;
+        if (reader.grid_[index] == 0)
+          tem_field_[index] = 1000.0;
         else
           tem_field_[index] = 20.0;
       }
@@ -30,6 +30,13 @@ TemField::TemField() {
 
 TemField::TemField(short i, short j, short k) :nx(i), ny(j), nz(k) {
   tem_field_ = new double[i*j*k];
+  header.SN = 0;
+  header.Time = 0;
+  header.Tmax = 1000;
+  header.Tmin = 20;
+  header.TL = 0;
+  header.TS = 0;
+  header.ALLCPUTime = 0;
 }
 
 TemField::~TemField() {
@@ -46,6 +53,9 @@ void TemField::SwapTemField(TemField& rhr) {
   double *tmp = tem_field_;
   tem_field_ = rhr.tem_field_;
   rhr.tem_field_ = tmp;
+  double t = header.Time;
+  header.Time = rhr.header.Time;
+  rhr.header.Time = t;
 }
 
 void TemField::Calculate(const TemField& last) {
@@ -146,7 +156,7 @@ double TemField::GetNextTem(short i, short j, short k) const {
 
 
   //  发热材料发热
-  if (reader.grid_[current_node_index] == 121) {
+  if (reader.grid_[current_node_index] == 5) {
 		T_next += GetFeverTem();
 	}
   return T_next;
@@ -154,13 +164,14 @@ double TemField::GetNextTem(short i, short j, short k) const {
 
 double TemField::GetFeverTem() const {
 	if (header.Time >= fever_struct.fever_start_time && header.Time <= fever_struct.fever_end_time) {
+		std::cout << "fever！";
 		return fever_struct.T_i_fever;
 	}
 	return 0.0;
 }
 void TemField::SetHeader(const TemField& last,double time_step) {
   header.SN = last.header.SN;
-  header.Time += time_step;
+  header.Time = last.header.Time + time_step;
   header.TL = last.header.TL;
   header.TS = last.header.TS;
   header.Tmax = 0.0;
@@ -193,5 +204,5 @@ void TemField::OutToTecplotZoo(std::ofstream& out) const {
   }
 }
 
-SgnFileReader TemField::reader(std::ifstream("huazhu\\mysgn.sgn", std::ios::in | std::ios::binary));
+SgnFileReader TemField::reader(std::ifstream("huazhu\\pn_test.sgn", std::ios::in | std::ios::binary));
 }//namespace simulation
