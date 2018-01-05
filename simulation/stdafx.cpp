@@ -12,3 +12,6 @@ std::map<int, database> data;
 
 fever_t fever_struct;
 
+double size;
+double airtem;
+double tem_step;
