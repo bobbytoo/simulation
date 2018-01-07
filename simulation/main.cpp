@@ -57,8 +57,7 @@ void Init()
 	fever_struct.d_mSi = fever_struct.v_Si * tem_step * grid_v;
 	fever_struct.d_q = fever_struct.d_mAl / (27 * 2) * fever_struct.H_Al \
 									 + fever_struct.d_mSi / (28 * 3) * fever_struct.H_Si;
-	fever_struct.T_i_fever = fever_struct.d_q / (data[5].midu * data[5].birerong * grid_v);
-  std::cout << "fever_t : " << fever_struct.T_i_fever << std::endl;
+	fever_struct.T_i_fever = fever_struct.d_q * 1000/ (data[5].midu * data[5].birerong * grid_v);
 }
 
 int main() {
