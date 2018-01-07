@@ -51,7 +51,7 @@ class TemField {
 public:
   static SgnFileReader reader;
   HeadTem header;
-  double *tem_field_;
+  float *tem_field_;
   short nx;
   short ny;
   short nz;

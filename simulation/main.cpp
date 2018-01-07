@@ -9,6 +9,8 @@
 #include"sgn_file_reader.h"
 #include"stdafx.h"
 #include"threadpool.h"
+#include"fever.hpp"
+#include"tem_field.h"
 
 
 void Init()
@@ -64,10 +66,20 @@ int main() {
   ThreadPool pool(4);
   std::vector<std::future<void>> results;
   Init();
+  
+  fever::LoadData(simulation::TemField::reader.grid_,
+    simulation::TemField::reader.GetNx(),
+    simulation::TemField::reader.GetNy(),
+    simulation::TemField::reader.GetNz(),
+    5,
+    data[5].midu,
+    data[5].birerong,
+    size,
+    tem_step);
   simulation::TemField tem_last;
   double total_time = 0;
   simulation::TemField tem_next;
-  for (int i = 1; i < 5000; ++i) {
+  for (int i = 1; i < 1500; ++i) {
     auto partone = std::bind(&simulation::TemField::CalculatePartOne, std::ref(tem_next), std::ref(tem_last));
     auto parttwo = std::bind(&simulation::TemField::CalculatePartTwo, std::ref(tem_next), std::ref(tem_last));
     auto partthree = std::bind(&simulation::TemField::CalculatePartThree, std::ref(tem_next), std::ref(tem_last));
@@ -80,10 +92,14 @@ int main() {
     for (auto& it : results) {
       it.get();
     }
+
+    tem_next.SetHeader(tem_last, tem_step);
+    //发热材料发热
+    fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
     std::cout << "第" << i << "次完成！\n";
-	tem_next.SetHeader(tem_last, tem_step);
+	
     //准备新文件
-	if (true) {
+	if (i%100 == 0) {
 		char buf[10];
 		sprintf_s(buf, "%d", i);
 		std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");

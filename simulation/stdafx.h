@@ -35,7 +35,7 @@ extern database fare;
 
 extern std::map<int, database> data;
 
-extern double size;
+extern float size;
 extern double airtem;
 extern double tem_step;
 

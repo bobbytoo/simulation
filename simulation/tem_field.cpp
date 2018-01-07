@@ -7,7 +7,7 @@ TemField::TemField() {
   nx = reader.GetNx();
   ny = reader.GetNy();
   nz = reader.GetNz();
-  tem_field_ = new double[nx*ny*nz];
+  tem_field_ = new float[nx*ny*nz];
   for (int k = 0; k < nz; ++k) {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
@@ -29,7 +29,7 @@ TemField::TemField() {
 }
 
 TemField::TemField(short i, short j, short k) :nx(i), ny(j), nz(k) {
-  tem_field_ = new double[i*j*k];
+  tem_field_ = new float[i*j*k];
   header.SN = 0;
   header.Time = 0;
   header.Tmax = 1000;
@@ -50,10 +50,10 @@ uint32_t TemField::GetNodeIndex(short i, short j, short k) const {
 }
 
 void TemField::SwapTemField(TemField& rhr) {
-  double *tmp = tem_field_;
+  float *tmp = tem_field_;
   tem_field_ = rhr.tem_field_;
   rhr.tem_field_ = tmp;
-  double t = header.Time;
+  float t = header.Time;
   header.Time = rhr.header.Time;
   rhr.header.Time = t;
 }
@@ -156,9 +156,6 @@ double TemField::GetNextTem(short i, short j, short k) const {
 
 
   //  发热材料发热
-  if (reader.grid_[current_node_index] == 5) {
-		T_next += GetFeverTem();
-	}
   return T_next;
 }
 
