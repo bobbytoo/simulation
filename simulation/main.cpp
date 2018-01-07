@@ -58,7 +58,7 @@ void Init()
 	fever_struct.d_q = fever_struct.d_mAl / (27 * 2) * fever_struct.H_Al \
 									 + fever_struct.d_mSi / (28 * 3) * fever_struct.H_Si;
 	fever_struct.T_i_fever = fever_struct.d_q / (data[5].midu * data[5].birerong * grid_v);
-	
+  std::cout << "fever_t : " << fever_struct.T_i_fever << std::endl;
 }
 
 int main() {
@@ -68,7 +68,7 @@ int main() {
   simulation::TemField tem_last;
   double total_time = 0;
   simulation::TemField tem_next;
-  for (int i = 1; i < 25; ++i) {
+  for (int i = 1; i < 5000; ++i) {
     auto partone = std::bind(&simulation::TemField::CalculatePartOne, std::ref(tem_next), std::ref(tem_last));
     auto parttwo = std::bind(&simulation::TemField::CalculatePartTwo, std::ref(tem_next), std::ref(tem_last));
     auto partthree = std::bind(&simulation::TemField::CalculatePartThree, std::ref(tem_next), std::ref(tem_last));
@@ -84,7 +84,7 @@ int main() {
     std::cout << "第" << i << "次完成！\n";
 	tem_next.SetHeader(tem_last, tem_step);
     //准备新文件
-	if (i % 100 == 0) {
+	if (true) {
 		char buf[10];
 		sprintf_s(buf, "%d", i);
 		std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
@@ -95,6 +95,7 @@ int main() {
 		tem_last.SwapTemField(tem_next);
 		results.clear();
 		total_time += tem_step;
+    std::cout << "total_time:" << total_time << std::endl;
   }
 	system("pause");
 	return 0;

@@ -164,8 +164,7 @@ double TemField::GetNextTem(short i, short j, short k) const {
 
 double TemField::GetFeverTem() const {
 	if (header.Time >= fever_struct.fever_start_time && header.Time <= fever_struct.fever_end_time) {
-		std::cout << "fever£¡";
-		return fever_struct.T_i_fever;
+		return fever_struct.T_i_fever * 1000;
 	}
 	return 0.0;
 }
