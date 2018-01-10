@@ -1,6 +1,9 @@
 #include"fever.hpp"
+#include"tem_field.h"
 #include<map>
 #include<iostream>
+
+#define TIME_SLICE 50
 
 namespace fever {
   fever_t fever_struct;
@@ -58,6 +61,7 @@ namespace fever {
     fever_struct.m_Al = density * grid_v * fever_struct.perm_Al;
     fever_struct.m_Si = density * grid_v * fever_struct.perm_Si;
     setFeverGrid(fever_struct.m_Al, fever_struct.m_Si);
+	std::cout << "feverinit over\n";
   }
 
   void setFeverGrid(double m_Al, double m_Si) {
@@ -86,6 +90,13 @@ namespace fever {
         }
       }
     }
+	transferAfterFever(t_field);
+  }
+
+  void transferAfterFever(float* t_field) {
+	  float tiny_t_step = step / TIME_SLICE;
+	  simulation::TemField tem(t_field, ni, nj, nk, tiny_t_step);
+	  tem.TemSimulation_F(TIME_SLICE, fever_num);
   }
 
   float GetFeverT(int64_t index, float this_time) {
@@ -106,7 +117,7 @@ namespace fever {
     }
     float d_q = d_mAl * 1000 / (27 * 2) * fever_struct.H_Al \
       + d_mSi * 1000 / (28 * 3) * fever_struct.H_Si;
-    if (grid_m_Al[index] <= 0 && grid_m_Al[index] <= 0) {
+    if (grid_m_Al[index] <= 0 && grid_m_Si[index] <= 0) {
       return 0.0;
     }
     return d_q / (density * sh * grid_v);

@@ -44,6 +44,8 @@ namespace fever {
 
   void eachStep(float* t_field,float this_time);
 
+  void transferAfterFever(float* t_field);
+
   float GetFeverT(int64_t index, float this_time);
 
   float GetAlRate();

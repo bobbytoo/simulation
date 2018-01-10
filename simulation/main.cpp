@@ -12,6 +12,7 @@
 #include"fever.hpp"
 #include"tem_field.h"
 
+static float tem_step;
 
 void Init()
 {
@@ -23,7 +24,6 @@ void Init()
 
   //设置网格大小与空气温度
   size = 0.004;
-  airtem = 20;
   tem_step = 10;
 
   //设置时间步长
@@ -63,8 +63,7 @@ void Init()
 }
 
 int main() {
-  ThreadPool pool(4);
-  std::vector<std::future<void>> results;
+
   Init();
   
   fever::LoadData(simulation::TemField::reader.grid_,
@@ -76,42 +75,10 @@ int main() {
     data[5].birerong,
     size,
     tem_step);
-  simulation::TemField tem_last;
-  double total_time = 0;
-  simulation::TemField tem_next;
-  for (int i = 1; i < 1500; ++i) {
-    auto partone = std::bind(&simulation::TemField::CalculatePartOne, std::ref(tem_next), std::ref(tem_last));
-    auto parttwo = std::bind(&simulation::TemField::CalculatePartTwo, std::ref(tem_next), std::ref(tem_last));
-    auto partthree = std::bind(&simulation::TemField::CalculatePartThree, std::ref(tem_next), std::ref(tem_last));
-    auto partfour = std::bind(&simulation::TemField::CalculatePartFour, std::ref(tem_next), std::ref(tem_last));
-    results.emplace_back(pool.enqueue(partone));
-    results.emplace_back(pool.enqueue(parttwo));
-    results.emplace_back(pool.enqueue(partthree));
-    results.emplace_back(pool.enqueue(partfour));
 
-    for (auto& it : results) {
-      it.get();
-    }
+  simulation::TemField tem(tem_step);
+  tem.TemSimulation(5000);
 
-    tem_next.SetHeader(tem_last, tem_step);
-    //发热材料发热
-    fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
-    std::cout << "第" << i << "次完成！\n";
-	
-    //准备新文件
-	if (i%100 == 0) {
-		char buf[10];
-		sprintf_s(buf, "%d", i);
-		std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
-		std::ofstream eachfile(name.c_str(), std::ios::out);
-		tem_next.OutToTecplot(eachfile);
-		eachfile.close();
-	}
-		tem_last.SwapTemField(tem_next);
-		results.clear();
-		total_time += tem_step;
-    std::cout << "total_time:" << total_time << std::endl;
-  }
-	system("pause");
-	return 0;
+  system("pause");
+  return 0;
 }

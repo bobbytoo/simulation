@@ -1,13 +1,18 @@
 #include"tem_field.h"
 #include"stdafx.h"
+#include"threadpool.h"
+#include"fever.hpp"
+#include<vector>
+#include<future>
 #include<iostream>
 
 namespace simulation {
-TemField::TemField() {
+TemField::TemField(float step) {
   nx = reader.GetNx();
   ny = reader.GetNy();
   nz = reader.GetNz();
   tem_field_ = new float[nx*ny*nz];
+  my_field = tem_field_;
   for (int k = 0; k < nz; ++k) {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
@@ -26,10 +31,12 @@ TemField::TemField() {
   header.TL = 0;
   header.TS = 0;
   header.ALLCPUTime = 0;
+  tem_step = step;
 }
 
-TemField::TemField(short i, short j, short k) :nx(i), ny(j), nz(k) {
+TemField::TemField(short i, short j, short k,float step) :nx(i), ny(j), nz(k),tem_step(step) {
   tem_field_ = new float[i*j*k];
+  my_field = tem_field_;
   header.SN = 0;
   header.Time = 0;
   header.Tmax = 1000;
@@ -39,8 +46,12 @@ TemField::TemField(short i, short j, short k) :nx(i), ny(j), nz(k) {
   header.ALLCPUTime = 0;
 }
 
+TemField::TemField(float* t_field, short x, short y, short z,float step):tem_field_(t_field), nx(x), ny(y), nz(z),tem_step(step){
+	my_field = nullptr;
+}
+
 TemField::~TemField() {
-  delete tem_field_;
+  delete my_field;
 }
 
 uint32_t TemField::GetNodeIndex(short i, short j, short k) const {
@@ -58,11 +69,13 @@ void TemField::SwapTemField(TemField& rhr) {
   rhr.header.Time = t;
 }
 
-void TemField::Calculate(const TemField& last) {
+void TemField::Calculate(const TemField& last,short index) {
   for (int k = 0; k < nz; ++k) {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
-        tem_field_[GetNodeIndex(i, j, k)] = last.GetNextTem(i, j, k);
+		  if (reader.grid_[GetNodeIndex(i, j, k)] == index) {
+			  tem_field_[GetNodeIndex(i, j, k)] = last.GetNextTem(i, j, k);
+		  }
       }
     }
   }
@@ -129,8 +142,6 @@ double TemField::GetNextTem(short i, short j, short k) const {
   };
   //热传导
   double tmpi = redaolv_i;
-  double tmpj[6];
-  double yz2[6];
   for (int x = 0; x < 6; ++x) {
     double T_j;
     double redaolv_j;
@@ -142,7 +153,6 @@ double TemField::GetNextTem(short i, short j, short k) const {
       T_j = tem_field_[round_index[x]];
       redaolv_j = GetNodeData(reader,round_index[x]).redaolv;
     }
-    tmpj[x] = redaolv_j;
     if (!equal(T_i, T_j)) {
       if (equal(redaolv_i, redaolv_j)) {
         yinzi2 += (T_j - T_i) * redaolv_i / size;
@@ -150,12 +160,9 @@ double TemField::GetNextTem(short i, short j, short k) const {
       else
         yinzi2 += (T_j - T_i) / (size / (2 * redaolv_i) + size / (2 * redaolv_j));
     }
-    yz2[x] = yinzi2;
   }
   double T_next = T_i + yinzi1 * yinzi2;
 
-
-  //  发热材料发热
   return T_next;
 }
 
@@ -165,6 +172,7 @@ double TemField::GetFeverTem() const {
 	}
 	return 0.0;
 }
+
 void TemField::SetHeader(const TemField& last,double time_step) {
   header.SN = last.header.SN;
   header.Time = last.header.Time + time_step;
@@ -200,5 +208,48 @@ void TemField::OutToTecplotZoo(std::ofstream& out) const {
   }
 }
 
+void TemField::TemSimulation(uint32_t times) {
+	ThreadPool pool(4);
+	std::vector<std::future<void>> results;
+
+	TemField tem_next(tem_step);
+	for (uint32_t i = 1; i < times; ++i) {
+		auto partone = std::bind(&TemField::CalculatePartOne, std::ref(tem_next), std::ref(*this));
+		auto parttwo = std::bind(&TemField::CalculatePartTwo, std::ref(tem_next), std::ref(*this));
+		auto partthree = std::bind(&TemField::CalculatePartThree, std::ref(tem_next), std::ref(*this));
+		auto partfour = std::bind(&TemField::CalculatePartFour, std::ref(tem_next), std::ref(*this));
+		results.emplace_back(pool.enqueue(partone));
+		results.emplace_back(pool.enqueue(parttwo));
+		results.emplace_back(pool.enqueue(partthree));
+		results.emplace_back(pool.enqueue(partfour));
+
+		for (auto& it : results) {
+			it.get();
+		}
+
+		tem_next.SetHeader(*this, tem_step);
+		std::cout << "第" << i << "次计算结束！";
+		if (i % 100 == 0) {
+			char buf[10];
+			sprintf_s(buf, "%d", i);
+			std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");
+			std::ofstream eachfile(name.c_str(), std::ios::out);
+			tem_next.OutToTecplot(eachfile);
+			eachfile.close();
+		}
+		fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
+
+		this->SwapTemField(tem_next);
+		results.clear();
+	}
+}
+
+void TemField::TemSimulation_F(uint32_t times,short index) {
+	TemField tem_next(tem_step);
+	for (uint32_t i = 0; i < times; ++i) {
+		tem_next.Calculate(*this, index);
+		this->SwapTemField(tem_next);
+	}
+}
 SgnFileReader TemField::reader(std::ifstream("huazhu\\pn_test.sgn", std::ios::in | std::ios::binary));
 }//namespace simulation

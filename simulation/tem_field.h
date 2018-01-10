@@ -1,5 +1,6 @@
 #pragma once
 #include<fstream>
+#include<functional>
 #include"sgn_file_reader.h"
 #include"stdafx.h"
 
@@ -23,12 +24,13 @@ class TemField {
     char ss[230];
   };
   #pragma pack()
-  TemField();
-  TemField(short i, short j, short k);
+  TemField(float step);
+  TemField(short i, short j, short k, float step);
+  TemField(float *t_field,short x,short y,short z,float step);
   virtual ~TemField();
   uint32_t GetNodeIndex(short i, short j, short k) const;
   void SwapTemField(TemField& rhr);
-  void Calculate(const TemField& last);
+  void Calculate(const TemField& last,short index);
   double GetNextTem(short i, short j, short k) const;
   void SetHeader(const TemField& last,double time_step);
   void OutToTecplot(std::ofstream& out) const;
@@ -47,13 +49,21 @@ class TemField {
   void CalculatePartThree(const TemField& last);
   void CalculatePartFour(const TemField& last);
   double GetFeverTem() const;
+  void TemSimulation(uint32_t times);
+  void TemSimulation_F(uint32_t times,short index);
+  inline
+  void dropOtherField() {
+	tem_field_ = nullptr;
+  }
 
 public:
   static SgnFileReader reader;
   HeadTem header;
   float *tem_field_;
+  float *my_field;
   short nx;
   short ny;
   short nz;
+  float tem_step;
 };
 }
