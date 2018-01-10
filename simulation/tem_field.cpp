@@ -211,7 +211,8 @@ void TemField::OutToTecplotZoo(std::ofstream& out) const {
 void TemField::TemSimulation(uint32_t times) {
 	ThreadPool pool(4);
 	std::vector<std::future<void>> results;
-
+	std::ofstream file("e:\\totalfile2.txt", std::ios::out);
+	OutToTecplot(file);
 	TemField tem_next(tem_step);
 	for (uint32_t i = 1; i < times; ++i) {
 		auto partone = std::bind(&TemField::CalculatePartOne, std::ref(tem_next), std::ref(*this));
@@ -228,7 +229,9 @@ void TemField::TemSimulation(uint32_t times) {
 		}
 
 		tem_next.SetHeader(*this, tem_step);
-		std::cout << "第" << i << "次计算结束！";
+		fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
+		std::cout << "第" << i << "次计算结束！\n";
+		/*
 		if (i % 100 == 0) {
 			char buf[10];
 			sprintf_s(buf, "%d", i);
@@ -237,11 +240,14 @@ void TemField::TemSimulation(uint32_t times) {
 			tem_next.OutToTecplot(eachfile);
 			eachfile.close();
 		}
-		fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
-
+		*/
+		if (i>650 && i< 950 && i % 20 == 0) {
+			OutToTecplotZoo(file);
+		}
 		this->SwapTemField(tem_next);
 		results.clear();
 	}
+	file.close();
 }
 
 void TemField::TemSimulation_F(uint32_t times,short index) {

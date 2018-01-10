@@ -52,6 +52,7 @@ namespace fever {
     double grid_v = size * size * size;
     //设置发热参数
     fever_struct.fever_start_time = 18; //s
+	fever_struct.fever_exit_time = 20;
     fever_struct.perm_Al = 0.17;
     fever_struct.perm_Si = 0.l;
     fever_struct.v_Al = 6.8;
@@ -79,6 +80,8 @@ namespace fever {
   }
 
   void eachStep(float* t_field,float this_time) {
+	if (this_time < fever_struct.fever_start_time || this_time >(fever_struct.fever_exit_time + fever_struct.fever_start_time))
+		return;
     tem_field = t_field;
     for (short k = 0; k < nk; ++k) {
       for (short j = 0; j < nj; ++j) {
@@ -100,8 +103,6 @@ namespace fever {
   }
 
   float GetFeverT(int64_t index, float this_time) {
-    if (this_time < fever_struct.fever_start_time)
-      return 0;
     float grid_v = size * size * size;
     float al_rate = GetAlRate();
     float si_rate = GetSiRate();

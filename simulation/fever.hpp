@@ -3,6 +3,7 @@
 namespace fever {
   struct fever_t {
     double fever_start_time;
+	double fever_exit_time;
     double v_Al;
     double v_Si;
     double perm_Al;
