@@ -24,7 +24,7 @@ class TemField {
     char ss[230];
   };
   #pragma pack()
-  TemField(float step);
+  explicit TemField(float step);
   TemField(short i, short j, short k, float step);
   TemField(float *t_field,short x,short y,short z,float step);
   virtual ~TemField();

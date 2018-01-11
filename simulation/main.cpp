@@ -77,7 +77,7 @@ int main() {
     tem_step);
 
   simulation::TemField tem(tem_step);
-  tem.TemSimulation(5000);
+  tem.TemSimulation(1000);
 
   system("pause");
   return 0;
