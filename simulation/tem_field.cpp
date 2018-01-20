@@ -73,9 +73,7 @@ void TemField::Calculate(const TemField& last,short index) {
   for (int k = 0; k < nz; ++k) {
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
-		  if (reader.grid_[GetNodeIndex(i, j, k)] == index) {
 			  tem_field_[GetNodeIndex(i, j, k)] = last.GetNextTem(i, j, k);
-		  }
       }
     }
   }
@@ -214,11 +212,11 @@ void TemField::TemSimulation(uint32_t times) {
 	std::ofstream file("d:\\totalfile.txt", std::ios::out);
 	OutToTecplot(file);
 	TemField tem_next(tem_step);
+  auto partone = std::bind(&TemField::CalculatePartOne, std::ref(tem_next), std::ref(*this));
+  auto parttwo = std::bind(&TemField::CalculatePartTwo, std::ref(tem_next), std::ref(*this));
+  auto partthree = std::bind(&TemField::CalculatePartThree, std::ref(tem_next), std::ref(*this));
+  auto partfour = std::bind(&TemField::CalculatePartFour, std::ref(tem_next), std::ref(*this));
 	for (uint32_t i = 1; i < times; ++i) {
-		auto partone = std::bind(&TemField::CalculatePartOne, std::ref(tem_next), std::ref(*this));
-		auto parttwo = std::bind(&TemField::CalculatePartTwo, std::ref(tem_next), std::ref(*this));
-		auto partthree = std::bind(&TemField::CalculatePartThree, std::ref(tem_next), std::ref(*this));
-		auto partfour = std::bind(&TemField::CalculatePartFour, std::ref(tem_next), std::ref(*this));
 		results.emplace_back(pool.enqueue(partone));
 		results.emplace_back(pool.enqueue(parttwo));
 		results.emplace_back(pool.enqueue(partthree));
@@ -232,10 +230,10 @@ void TemField::TemSimulation(uint32_t times) {
 		fever::eachStep(tem_next.tem_field_, tem_next.header.Time);
 
 		std::cout << "第" << i << "次计算结束！\n";
-    if (i > 200 && i < 1500 && i % 50 == 0) {
+    if (false) {
       tem_next.OutToTecplotZoo(file);
     }
-		if (false) {
+		if (i >= 200 && i <= 2000 && i % 50 == 0) {
 			char buf[10];
 			sprintf_s(buf, "%d", i);
 			std::string name = std::string("Tempart") + std::string(buf) + std::string(".lay");

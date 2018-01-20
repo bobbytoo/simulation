@@ -3,7 +3,7 @@
 #include<map>
 #include<iostream>
 
-#define TIME_SLICE 50
+#define TIME_SLICE 500
 
 namespace fever {
   fever_t fever_struct;
@@ -80,20 +80,18 @@ namespace fever {
   }
 
   void eachStep(float* t_field,float this_time) {
-	if (this_time < fever_struct.fever_start_time || this_time >(fever_struct.fever_exit_time + fever_struct.fever_start_time))
-		return;
     tem_field = t_field;
     for (short k = 0; k < nk; ++k) {
       for (short j = 0; j < nj; ++j) {
         for (short i = 0; i < ni; ++i) {
           int64_t index = GetNodeIndex(i, j, k);
-          if (sgn_file[index] == fever_num) {
+          if (sgn_file[index] == fever_num && tem_field[index] >= 680) {
             tem_field[index] += GetFeverT(index, this_time);
           }
         }
       }
     }
-	transferAfterFever(t_field);
+	//transferAfterFever(t_field);
   }
 
   void transferAfterFever(float* t_field) {
@@ -116,7 +114,7 @@ namespace fever {
       d_mSi = si_rate * step * grid_v;
       grid_m_Si[index] -= d_mSi;
     }
-    float d_q = d_mAl * 1000 / (27 * 2) * fever_struct.H_Al \
+    float d_q = d_mAl * 1000  / (27 * 2) * fever_struct.H_Al \
       + d_mSi * 1000 / (28 * 3) * fever_struct.H_Si;
     if (grid_m_Al[index] <= 0 && grid_m_Si[index] <= 0) {
       return 0.0;
@@ -125,7 +123,7 @@ namespace fever {
   }
 
   float GetAlRate() {
-    return 6.8;
+    return 6.4;
   }
 
   float GetSiRate() {
